@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<head>
+  <title>Vega Lite USA Map</title>
+  <meta charset="utf-8">
+
+  <script src="https://cdn.jsdelivr.net/npm/vega@3.2.1/build/vega.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@2.3.1/build/vega-lite.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.2.0/build/vega-embed.min.js"></script>
+
+  <style media="screen">
+    /* Add space between Vega-Embed links  */
+    .vega-actions a {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+<h1>Vega Lite USA Map</h1>
+<!-- Container for the visualization -->
+<div id="vis"></div>
+
+<script>
+  // Assign the specification to a local variable vlSpec.
+  var vlSpec = {
+    '$schema': 'https://vega.github.io/schema/vega/v3.json',
+    'width': 960,
+    'height': 600,
+    'autosize': 'none',
+    'data': [
+      {
+        'name': 'unemp',
+        'url': 'data/unemployment.tsv',
+        'format': {
+          'type': 'tsv',
+          'parse': 'auto',
+          'delimiter': '\t'
+        }
+      },
+      {
+        'name': 'counties',
+        'url': 'data/us-10m.json',
+        'format': {
+          'type': 'topojson',
+          'feature': 'counties'
+        },
+        'transform': [
+          {
+            'type': 'lookup',
+            'from': 'unemp',
+            'key': 'id',
+            'fields': [
+              'id'
+            ],
+            'values': [
+              'rate'
+            ]
+          },
+          {
+            'type': 'filter',
+            'expr': 'datum.rate != null'
+          }
+        ]
+      }
+    ],
+    'projections': [
+      {
+        'name': 'projection',
+        'type': 'albersUsa'
+      }
+    ],
+    'scales': [
+      {
+        'name': 'color',
+        'type': 'quantize',
+        'domain': [
+          0,
+          0.15
+        ],
+        'range': {
+          'scheme': 'greenblue-9'
+        }
+      }
+    ],
+    'legends': [
+      {
+        'fill': 'color',
+        'orient': 'top-left',
+        'title': 'Unemployment',
+        'format': '0.1%',
+        'encode': {
+          'symbols': {
+            'update': {
+              'shape': {
+                'value': 'square'
+              },
+              'stroke': {
+                'value': '#000'
+              },
+              'strokeWidth': {
+                'value': 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    'marks': [
+      {
+        'type': 'shape',
+        'from': {
+          'data': 'counties'
+        },
+        'encode': {
+          'enter': {
+            'tooltip': {
+              'signal': 'format(datum.rate, \'0.1%\')'
+            }
+          },
+          'update': {
+            'fill': {
+              'scale': 'color',
+              'field': 'rate'
+            }
+          },
+          'hover': {
+            'fill': {
+              'value': 'red'
+            }
+          }
+        },
+        'transform': [
+          {
+            'type': 'geoshape',
+            'projection': 'projection'
+          }
+        ]
+      }
+    ]
+  };
+
+  // Embed the visualization in the container with id `vis`
+  vegaEmbed('#vis', vlSpec);
+</script>
+</body>
+</html>
